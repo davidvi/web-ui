@@ -19,8 +19,13 @@ def main():
     # Configure authentication if password is set
     auth = None
     if password:
-        # Password-only authentication (empty username)
-        auth = [("", password)]
+        # Password-only authentication using a callable function
+        # The function ignores username and only validates password
+        def check_password(username, pwd):
+            # Ignore username, only check password
+            return pwd == password
+        
+        auth = check_password
     
     demo = create_ui(theme_name=args.theme)
     demo.queue().launch(server_name=args.ip, server_port=args.port, auth=auth)
