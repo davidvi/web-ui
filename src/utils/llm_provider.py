@@ -352,10 +352,31 @@ def get_llm_model(provider: str, **kwargs):
             extra_body = {"enable_thinking": False}
         )
     elif provider == "openrouter":
+        # Explicitly retrieve API key from kwargs or env var (prioritize kwargs from UI)
+        if not kwargs.get("api_key", ""):
+            api_key = os.getenv("OPENROUTER_API_KEY", "")
+        else:
+            api_key = kwargs.get("api_key")
+        
+        if not api_key:
+            raise ValueError("💥 OpenRouter API key not found! 🔑 Please set the `OPENROUTER_API_KEY` environment variable or provide it in the UI.")
+        
         if not kwargs.get("base_url", ""):
             base_url = os.getenv("OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1")
         else:
             base_url = kwargs.get("base_url")
+        
+        # Normalize base_url: remove /chat/completions if present (ChatOpenAI adds it automatically)
+        # Ensure it ends with /v1 for proper API path construction
+        base_url = base_url.rstrip("/")
+        if "/chat/completions" in base_url:
+            base_url = base_url.replace("/chat/completions", "").rstrip("/")
+        if not base_url.endswith("/v1"):
+            if base_url.endswith("/api"):
+                base_url = base_url + "/v1"
+            else:
+                # If it doesn't end with /api or /v1, assume it needs /v1
+                base_url = base_url + "/v1"
 
         return ChatOpenAI(
             model=kwargs.get("model_name", "openai/gpt-4o"),
