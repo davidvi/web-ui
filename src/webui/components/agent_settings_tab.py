@@ -16,10 +16,25 @@ def update_model_dropdown(llm_provider):
     """
     Update the model name dropdown with predefined models for the selected provider.
     """
+    # Handle OpenRouter - fetch models dynamically
+    if llm_provider == "openrouter":
+        models = config.fetch_openrouter_models()
+        if models:
+            # Update the model_names cache
+            config.model_names["openrouter"] = models
+            return gr.Dropdown(choices=models, value=models[0] if models else "", interactive=True, allow_custom_value=True)
+        else:
+            # API call failed, return empty dropdown with custom value allowed
+            logger.warning("Failed to fetch OpenRouter models, using empty dropdown with custom value input")
+            return gr.Dropdown(choices=[], value="", interactive=True, allow_custom_value=True)
+    
     # Use predefined models for the selected provider
     if llm_provider in config.model_names:
-        return gr.Dropdown(choices=config.model_names[llm_provider], value=config.model_names[llm_provider][0],
-                           interactive=True)
+        model_list = config.model_names[llm_provider]
+        if model_list:
+            return gr.Dropdown(choices=model_list, value=model_list[0], interactive=True, allow_custom_value=True)
+        else:
+            return gr.Dropdown(choices=[], value="", interactive=True, allow_custom_value=True)
     else:
         return gr.Dropdown(choices=[], value="", interactive=True, allow_custom_value=True)
 

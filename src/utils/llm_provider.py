@@ -351,5 +351,17 @@ def get_llm_model(provider: str, **kwargs):
             temperature=kwargs.get("temperature", 0.0),
             extra_body = {"enable_thinking": False}
         )
+    elif provider == "openrouter":
+        if not kwargs.get("base_url", ""):
+            base_url = os.getenv("OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1")
+        else:
+            base_url = kwargs.get("base_url")
+
+        return ChatOpenAI(
+            model=kwargs.get("model_name", "openai/gpt-4o"),
+            temperature=kwargs.get("temperature", 0.0),
+            base_url=base_url,
+            api_key=api_key,
+        )
     else:
         raise ValueError(f"Unsupported provider: {provider}")

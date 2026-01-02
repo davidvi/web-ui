@@ -1,3 +1,11 @@
+import logging
+import requests
+
+logger = logging.getLogger(__name__)
+
+# Cache for OpenRouter models
+_openrouter_models_cache = None
+
 PROVIDER_DISPLAY_NAMES = {
     "openai": "OpenAI",
     "azure_openai": "Azure OpenAI",
@@ -9,6 +17,7 @@ PROVIDER_DISPLAY_NAMES = {
     "unbound": "Unbound AI",
     "ibm": "IBM",
     "grok": "Grok",
+    "openrouter": "OpenRouter",
 }
 
 # Predefined model names for common providers
@@ -97,4 +106,41 @@ model_names = {
         "Qwen/Qwen3-32B",
         "Qwen/Qwen3-235B-A22B",
     ],
+    "openrouter": [],
 }
+
+
+def fetch_openrouter_models():
+    """
+    Fetch available models from OpenRouter API.
+    Returns a list of model IDs, with caching to avoid repeated API calls.
+    """
+    global _openrouter_models_cache
+    
+    # Return cached models if available
+    if _openrouter_models_cache is not None:
+        return _openrouter_models_cache
+    
+    try:
+        response = requests.get("https://openrouter.ai/api/v1/models", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extract model IDs from the response
+        # Response format: {"data": [{"id": "model-id", ...}, ...]}
+        if "data" in data and isinstance(data["data"], list):
+            models = [model["id"] for model in data["data"] if "id" in model]
+            # Sort models for better UX
+            models.sort()
+            _openrouter_models_cache = models
+            logger.info(f"Successfully fetched {len(models)} models from OpenRouter")
+            return models
+        else:
+            logger.warning("OpenRouter API response format unexpected")
+            return []
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Failed to fetch OpenRouter models: {e}")
+        return []
+    except Exception as e:
+        logger.warning(f"Unexpected error fetching OpenRouter models: {e}")
+        return []
