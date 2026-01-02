@@ -76,17 +76,37 @@ def create_agent_settings_tab(webui_manager: WebuiManager):
 
     with gr.Group():
         with gr.Row():
+            # Set default provider to openrouter
+            default_provider = os.getenv("DEFAULT_LLM", "openrouter")
+            default_model = os.getenv("DEFAULT_MODEL", "google/gemini-3-flash-preview")
+            
+            # For openrouter, fetch models if available, otherwise use default model
+            if default_provider == "openrouter":
+                openrouter_models = config.fetch_openrouter_models()
+                if openrouter_models:
+                    config.model_names["openrouter"] = openrouter_models
+                    # Check if default model is in the list, otherwise use first available
+                    if default_model not in openrouter_models:
+                        default_model = openrouter_models[0] if openrouter_models else default_model
+                model_choices = openrouter_models if openrouter_models else [default_model]
+            else:
+                model_choices = config.model_names.get(default_provider, [default_model])
+                if not model_choices:
+                    model_choices = [default_model]
+                if default_model not in model_choices:
+                    default_model = model_choices[0] if model_choices else default_model
+            
             llm_provider = gr.Dropdown(
                 choices=[provider for provider, model in config.model_names.items()],
                 label="LLM Provider",
-                value=os.getenv("DEFAULT_LLM", "openai"),
+                value=default_provider,
                 info="Select LLM provider for LLM",
                 interactive=True
             )
             llm_model_name = gr.Dropdown(
                 label="LLM Model Name",
-                choices=config.model_names[os.getenv("DEFAULT_LLM", "openai")],
-                value=config.model_names[os.getenv("DEFAULT_LLM", "openai")][0],
+                choices=model_choices,
+                value=default_model,
                 interactive=True,
                 allow_custom_value=True,
                 info="Select a model in the dropdown options or directly type a custom model name"
