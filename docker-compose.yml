@@ -42,6 +42,7 @@ services:
       # Application Settings
       - ANONYMIZED_TELEMETRY=${ANONYMIZED_TELEMETRY:-false}
       - BROWSER_USE_LOGGING_LEVEL=${BROWSER_USE_LOGGING_LEVEL:-info}
+      - WEBUI_PASSWORD=${WEBUI_PASSWORD:-}
 
       # Browser Settings
       - BROWSER_PATH=
